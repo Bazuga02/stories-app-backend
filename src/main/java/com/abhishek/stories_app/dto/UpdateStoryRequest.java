@@ -1,0 +1,7 @@
+package com.abhishek.stories_app.dto;
+
+import com.abhishek.stories_app.model.StoryStatus;
+import jakarta.validation.constraints.Size;
+
+public record UpdateStoryRequest(
+		@Size(max = 500) String title, String content, StoryStatus status) {}
