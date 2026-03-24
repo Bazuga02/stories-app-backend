@@ -2,6 +2,8 @@ package com.abhishek.stories_app.service;
 
 import com.abhishek.stories_app.dto.CreateStoryRequest;
 import com.abhishek.stories_app.dto.DraftSaveRequest;
+import com.abhishek.stories_app.dto.NarrateRequest;
+import com.abhishek.stories_app.dto.NarrateResponse;
 import com.abhishek.stories_app.dto.PaginatedStoriesResponse;
 import com.abhishek.stories_app.dto.StoryResponse;
 import com.abhishek.stories_app.dto.UpdateStoryRequest;
@@ -39,6 +41,19 @@ public class StoryService {
 	private final CommentRepository commentRepository;
 	private final BookmarkRepository bookmarkRepository;
 	private final SecurityUtils securityUtils;
+	private final VoiceRssTextToSpeechService voiceRssTextToSpeechService;
+
+	@Transactional(readOnly = true)
+	public NarrateResponse narrate(String idRaw, NarrateRequest req) {
+		long id = parseId(idRaw);
+		Story story =
+				storyRepository
+						.findDetailById(id)
+						.orElseThrow(() -> new ResourceNotFoundException("Story not found"));
+		User viewer = securityUtils.currentUserOrNull();
+		ensureReadable(story, viewer);
+		return voiceRssTextToSpeechService.narrate(story.getContent(), req);
+	}
 
 	public static long parseId(String raw) {
 		try {

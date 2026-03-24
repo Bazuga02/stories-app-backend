@@ -1,6 +1,8 @@
 package com.abhishek.stories_app.controller;
 
+import com.abhishek.stories_app.dto.AdminCommentRowResponse;
 import com.abhishek.stories_app.dto.AdminStatsResponse;
+import com.abhishek.stories_app.dto.AdminStoryRowResponse;
 import com.abhishek.stories_app.dto.UserResponse;
 import com.abhishek.stories_app.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +37,18 @@ public class AdminController {
 	@Operation(summary = "Platform statistics")
 	public AdminStatsResponse stats() {
 		return adminService.stats();
+	}
+
+	@GetMapping("/stories")
+	@Operation(summary = "List all stories for moderation")
+	public List<AdminStoryRowResponse> moderationStories() {
+		return adminService.listStoriesForModeration();
+	}
+
+	@GetMapping("/comments")
+	@Operation(summary = "List all comments for moderation")
+	public List<AdminCommentRowResponse> moderationComments() {
+		return adminService.listCommentsForModeration();
 	}
 
 	@DeleteMapping("/stories/{id}")

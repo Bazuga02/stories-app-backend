@@ -54,6 +54,8 @@ public class SecurityConfig {
 										.permitAll()
 										.requestMatchers(HttpMethod.GET, "/stories/*")
 										.permitAll()
+										.requestMatchers(HttpMethod.POST, "/stories/*/narrate")
+										.authenticated()
 										.requestMatchers("/admin/**")
 										.hasRole("ADMIN")
 										.anyRequest()

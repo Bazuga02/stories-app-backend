@@ -3,6 +3,8 @@ package com.abhishek.stories_app.controller;
 import com.abhishek.stories_app.dto.BookmarkActionResponse;
 import com.abhishek.stories_app.dto.CreateStoryRequest;
 import com.abhishek.stories_app.dto.DraftSaveRequest;
+import com.abhishek.stories_app.dto.NarrateRequest;
+import com.abhishek.stories_app.dto.NarrateResponse;
 import com.abhishek.stories_app.dto.PaginatedCommentsResponse;
 import com.abhishek.stories_app.dto.PaginatedStoriesResponse;
 import com.abhishek.stories_app.dto.StoryResponse;
@@ -77,6 +79,13 @@ public class StoryController {
 			@RequestParam(defaultValue = "1") int page,
 			@RequestParam(defaultValue = "20") int pageSize) {
 		return commentService.listForStory(id, page, pageSize);
+	}
+
+	@PostMapping("/{id}/narrate")
+	@Operation(summary = "Narrate a published story using VoiceRSS")
+	public NarrateResponse narrate(
+			@PathVariable String id, @RequestBody(required = false) NarrateRequest req) {
+		return storyService.narrate(id, req);
 	}
 
 	@PostMapping
