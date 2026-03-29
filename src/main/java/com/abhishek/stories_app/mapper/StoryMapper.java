@@ -63,6 +63,7 @@ public final class StoryMapper {
 				s.getViewCount(),
 				formatInstant(s.getCreatedAt()),
 				formatInstant(s.getUpdatedAt()),
+				s.getBgimg(),
 				comments,
 				commentsTotal,
 				commentsPage,

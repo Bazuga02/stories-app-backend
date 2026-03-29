@@ -65,6 +65,10 @@ public class Story {
 	@Builder.Default
 	private long viewCount = 0;
 
+	/** Cover image URL (e.g. Picsum or CDN). */
+	@Column(name = "bgimg", length = 2048)
+	private String bgimg;
+
 	@OneToMany(mappedBy = "story")
 	@Builder.Default
 	private List<Like> likes = new ArrayList<>();

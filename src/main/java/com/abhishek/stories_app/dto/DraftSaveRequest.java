@@ -4,4 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record DraftSaveRequest(
-		@NotBlank @Size(max = 500) String title, @Size(max = 100_000) String content) {}
+		@NotBlank @Size(max = 500) String title,
+		@Size(max = 100_000) String content,
+		@Size(max = 2048) String bgimg) {}

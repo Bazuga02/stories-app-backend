@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,6 +64,14 @@ public class StoryService {
 		}
 	}
 
+	private static String normalizeBgimg(String raw) {
+		if (raw == null) {
+			return null;
+		}
+		String t = raw.trim();
+		return t.isEmpty() ? null : t;
+	}
+
 	@Transactional
 	public StoryResponse create(CreateStoryRequest req) {
 		User author = securityUtils.currentUser();
@@ -75,6 +84,7 @@ public class StoryService {
 						.status(status)
 						.author(author)
 						.viewCount(0)
+						.bgimg(normalizeBgimg(req.bgimg()))
 						.build();
 		story = storyRepository.save(story);
 		return enrich(story, author, null);
@@ -92,6 +102,9 @@ public class StoryService {
 		}
 		if (req.status() != null) {
 			story.setStatus(req.status());
+		}
+		if (req.bgimg() != null) {
+			story.setBgimg(normalizeBgimg(req.bgimg()));
 		}
 		story = storyRepository.save(story);
 		return enrich(story, user, null);
@@ -131,13 +144,20 @@ public class StoryService {
 		}
 		story.setTitle(req.title().trim());
 		story.setContent(req.content() == null ? "" : req.content());
+		if (req.bgimg() != null) {
+			story.setBgimg(normalizeBgimg(req.bgimg()));
+		}
 		story = storyRepository.save(story);
 		return enrich(story, user, null);
 	}
 
 	@Transactional(readOnly = true)
 	public PaginatedStoriesResponse listPublished(int page, int pageSize, String search) {
-		var pg = PageRequest.of(Math.max(0, page - 1), Math.max(1, pageSize));
+		var pg =
+				PageRequest.of(
+						Math.max(0, page - 1),
+						Math.max(1, pageSize),
+						Sort.by(Sort.Direction.DESC, "updatedAt"));
 		Page<Story> result;
 		if (search != null && !search.isBlank()) {
 			result =
