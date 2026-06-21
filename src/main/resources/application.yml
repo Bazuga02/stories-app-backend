@@ -18,6 +18,33 @@ app:
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    rules:
+      - name: auth-login
+        path-pattern: /auth/login
+        methods: [POST]
+        capacity: 10
+        refill-amount: 10
+        window: 1m
+      - name: auth-register
+        path-pattern: /auth/register
+        methods: [POST]
+        capacity: 5
+        refill-amount: 5
+        window: 1m
+      - name: narrate
+        path-pattern: /stories/*/narrate
+        methods: [POST]
+        capacity: 20
+        refill-amount: 20
+        window: 1h
+      - name: global
+        path-pattern: /**
+        methods: []
+        capacity: 200
+        refill-amount: 200
+        window: 1m
 
 ---
 spring:
