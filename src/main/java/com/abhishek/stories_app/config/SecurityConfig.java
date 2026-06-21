@@ -1,6 +1,7 @@
 package com.abhishek.stories_app.config;
 
 import com.abhishek.stories_app.security.JwtAuthenticationFilter;
+import com.abhishek.stories_app.security.RateLimitFilter;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final RateLimitFilter rateLimitFilter;
 	private final CorsProperties corsProperties;
 
 	@Bean
@@ -60,6 +62,8 @@ public class SecurityConfig {
 										.hasRole("ADMIN")
 										.anyRequest()
 										.authenticated())
+				.addFilterBefore(
+						rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
 				.addFilterBefore(
 						jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
