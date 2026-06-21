@@ -3,6 +3,7 @@ package com.abhishek.stories_app.service;
 import com.abhishek.stories_app.dto.AuthResponse;
 import com.abhishek.stories_app.dto.LoginRequest;
 import com.abhishek.stories_app.dto.RegisterRequest;
+import com.abhishek.stories_app.dto.UserResponse;
 import com.abhishek.stories_app.exception.BadRequestException;
 import com.abhishek.stories_app.exception.UnauthorizedException;
 import com.abhishek.stories_app.mapper.UserMapper;
@@ -11,7 +12,6 @@ import com.abhishek.stories_app.model.User;
 import com.abhishek.stories_app.repository.UserRepository;
 import com.abhishek.stories_app.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
 	private final UserRepository userRepository;
-	private final PasswordEncoder passwordEncoder;
+	private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 	private final JwtUtil jwtUtil;
+	private final RefreshTokenService refreshTokenService;
+
+	public record AuthSession(String accessToken, UserResponse user, String refreshTokenPlain) {}
 
 	@Transactional
-	public AuthResponse register(RegisterRequest req) {
+	public AuthSession register(RegisterRequest req) {
 		if (userRepository.existsByEmailIgnoreCase(req.email())) {
 			throw new BadRequestException("Email already registered");
 		}
@@ -38,12 +41,11 @@ public class AuthService {
 						.role(Role.USER)
 						.build();
 		user = userRepository.save(user);
-		String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
-		return new AuthResponse(token, UserMapper.toResponse(user));
+		return issueSession(user);
 	}
 
 	@Transactional(readOnly = true)
-	public AuthResponse login(LoginRequest req) {
+	public AuthSession login(LoginRequest req) {
 		User user =
 				userRepository
 						.findByEmailIgnoreCase(req.email().trim().toLowerCase())
@@ -51,8 +53,36 @@ public class AuthService {
 		if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
 			throw new UnauthorizedException("Invalid email or password");
 		}
-		String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
-		return new AuthResponse(token, UserMapper.toResponse(user));
+		return issueSession(user);
+	}
+
+	@Transactional
+	public AuthSession refreshWithSession(String refreshTokenPlain) {
+		var rotated = refreshTokenService.rotateRefreshToken(refreshTokenPlain);
+		String accessToken =
+				jwtUtil.generateToken(
+						rotated.user().getId(),
+						rotated.user().getEmail(),
+						rotated.user().getRole());
+		return new AuthSession(
+				accessToken, UserMapper.toResponse(rotated.user()), rotated.plainToken());
+	}
+
+	@Transactional
+	public void logout(String refreshTokenPlain) {
+		if (refreshTokenPlain != null && !refreshTokenPlain.isBlank()) {
+			refreshTokenService.revokeRefreshToken(refreshTokenPlain);
+		}
+	}
+
+	private AuthSession issueSession(User user) {
+		String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
+		String refreshToken = refreshTokenService.createRefreshToken(user);
+		return new AuthSession(accessToken, UserMapper.toResponse(user), refreshToken);
+	}
+
+	public AuthResponse toAuthResponse(AuthSession session) {
+		return new AuthResponse(session.accessToken(), session.user());
 	}
 
 	private String uniqueUsernameFromEmail(String email) {

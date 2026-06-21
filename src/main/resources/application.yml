@@ -15,7 +15,13 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+    expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
+  refresh-token:
+    expiration-days: ${REFRESH_TOKEN_EXPIRATION_DAYS:14}
+    cookie-name: ${REFRESH_TOKEN_COOKIE_NAME:stories_refresh}
+    cookie-path: ${REFRESH_TOKEN_COOKIE_PATH:/}
+    secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
+    same-site: ${REFRESH_TOKEN_COOKIE_SAME_SITE:Lax}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
   rate-limit:
@@ -32,6 +38,12 @@ app:
         methods: [POST]
         capacity: 5
         refill-amount: 5
+        window: 1m
+      - name: auth-refresh
+        path-pattern: /auth/refresh
+        methods: [POST]
+        capacity: 30
+        refill-amount: 30
         window: 1m
       - name: narrate
         path-pattern: /stories/*/narrate
