@@ -44,7 +44,7 @@ public class AuthService {
 		return issueSession(user);
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public AuthSession login(LoginRequest req) {
 		User user =
 				userRepository
