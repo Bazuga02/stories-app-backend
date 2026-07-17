@@ -14,18 +14,22 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    # Required: generate at least 32 random bytes and inject it at runtime.
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
   refresh-token:
     expiration-days: ${REFRESH_TOKEN_EXPIRATION_DAYS:14}
     cookie-name: ${REFRESH_TOKEN_COOKIE_NAME:stories_refresh}
     cookie-path: ${REFRESH_TOKEN_COOKIE_PATH:/}
-    secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
+    # Secure by default; the dev profile explicitly opts out for local HTTP.
+    secure: ${REFRESH_TOKEN_COOKIE_SECURE:true}
     same-site: ${REFRESH_TOKEN_COOKIE_SAME_SITE:Lax}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
+    max-buckets: ${RATE_LIMIT_MAX_BUCKETS:50000}
+    bucket-ttl: ${RATE_LIMIT_BUCKET_TTL:15m}
     rules:
       - name: auth-login
         path-pattern: /auth/login
@@ -58,6 +62,11 @@ app:
         refill-amount: 200
         window: 1m
 
+  proxy:
+    # Forwarded headers are accepted only from explicitly trusted immediate peers.
+    trust-forwarded-headers: ${TRUST_FORWARDED_HEADERS:false}
+    trusted-proxies: ${TRUSTED_PROXY_IPS:}
+
 ---
 spring:
   config:
@@ -72,6 +81,10 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+app:
+  refresh-token:
+    secure: false
 
 ---
 spring:

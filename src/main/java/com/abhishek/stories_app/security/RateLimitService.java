@@ -3,9 +3,9 @@ package com.abhishek.stories_app.security;
 import com.abhishek.stories_app.config.RateLimitProperties;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
 
@@ -15,7 +15,7 @@ public class RateLimitService {
 	private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
 	private final RateLimitProperties properties;
-	private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+	private final LinkedHashMap<String, BucketEntry> buckets = new LinkedHashMap<>(128, 0.75f, true);
 
 	public RateLimitService(RateLimitProperties properties) {
 		this.properties = properties;
@@ -31,11 +31,24 @@ public class RateLimitService {
 				.toList();
 	}
 
-	public boolean tryConsume(RateLimitProperties.Rule rule, String clientKey) {
+	public synchronized boolean tryConsume(RateLimitProperties.Rule rule, String clientKey) {
+		long now = System.nanoTime();
+		removeExpiredBuckets(now);
 		String bucketKey = rule.name() + ":" + clientKey;
-		Bucket bucket =
-				buckets.computeIfAbsent(bucketKey, ignored -> newBucket(rule));
-		return bucket.tryConsume(1);
+		BucketEntry entry = buckets.get(bucketKey);
+		if (entry == null) {
+			while (buckets.size() >= properties.maxBuckets()) {
+				Iterator<String> iterator = buckets.keySet().iterator();
+				if (!iterator.hasNext()) break;
+				iterator.next();
+				iterator.remove();
+			}
+			entry = new BucketEntry(newBucket(rule), now);
+			buckets.put(bucketKey, entry);
+		} else {
+			entry.lastAccessNanos = now;
+		}
+		return entry.bucket.tryConsume(1);
 	}
 
 	public long retryAfterSeconds(RateLimitProperties.Rule rule) {
@@ -50,6 +63,22 @@ public class RateLimitService {
 		return PATH_MATCHER.match(rule.pathPattern(), path);
 	}
 
+	private void removeExpiredBuckets(long now) {
+		long ttlNanos = properties.bucketTtl().toNanos();
+		Iterator<BucketEntry> iterator = buckets.values().iterator();
+		while (iterator.hasNext()) {
+			BucketEntry entry = iterator.next();
+			if (now - entry.lastAccessNanos < ttlNanos) {
+				break;
+			}
+			iterator.remove();
+		}
+	}
+
+	synchronized int bucketCount() {
+		return buckets.size();
+	}
+
 	private static Bucket newBucket(RateLimitProperties.Rule rule) {
 		int capacity = Math.max(1, rule.capacity());
 		int refill = Math.max(1, rule.refillAmount());
@@ -59,5 +88,15 @@ public class RateLimitService {
 						.refillGreedy(refill, rule.window())
 						.build();
 		return Bucket.builder().addLimit(limit).build();
+	}
+
+	private static final class BucketEntry {
+		private final Bucket bucket;
+		private long lastAccessNanos;
+
+		private BucketEntry(Bucket bucket, long lastAccessNanos) {
+			this.bucket = bucket;
+			this.lastAccessNanos = lastAccessNanos;
+		}
 	}
 }

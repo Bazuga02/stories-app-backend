@@ -32,7 +32,7 @@ public class CommentService {
 	@Transactional(readOnly = true)
 	public PaginatedCommentsResponse listForStory(Long storyId, int page, int pageSize) {
 		Story story = loadStoryForPublicComments(storyId);
-		var pg = PageRequest.of(Math.max(0, page - 1), Math.max(1, pageSize));
+		var pg = PageRequest.of(ApiLimits.page(page) - 1, ApiLimits.pageSize(pageSize, ApiLimits.MAX_COMMENT_PAGE_SIZE));
 		Page<Comment> result = commentRepository.findByStoryOrderByCreatedAtAsc(story, pg);
 		var items = result.getContent().stream().map(StoryMapper::toComment).toList();
 		return new PaginatedCommentsResponse(

@@ -5,6 +5,6 @@ import jakarta.validation.constraints.Size;
 
 public record UpdateStoryRequest(
 		@Size(max = 500) String title,
-		String content,
+		@Size(max = 100_000) String content,
 		StoryStatus status,
 		@Size(max = 2048) String bgimg) {}

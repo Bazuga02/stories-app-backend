@@ -11,7 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 	JwtProperties.class,
 	CorsProperties.class,
 	RateLimitProperties.class,
-	RefreshTokenProperties.class
+	RefreshTokenProperties.class,
+	ProxyProperties.class
 })
 public class AppConfig {
 

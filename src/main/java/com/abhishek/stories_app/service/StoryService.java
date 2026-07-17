@@ -155,8 +155,8 @@ public class StoryService {
 	public PaginatedStoriesResponse listPublished(int page, int pageSize, String search) {
 		var pg =
 				PageRequest.of(
-						Math.max(0, page - 1),
-						Math.max(1, pageSize),
+						ApiLimits.page(page) - 1,
+						ApiLimits.pageSize(pageSize, ApiLimits.MAX_STORY_PAGE_SIZE),
 						Sort.by(Sort.Direction.DESC, "updatedAt"));
 		Page<Story> result;
 		if (search != null && !search.isBlank()) {
@@ -182,7 +182,7 @@ public class StoryService {
 
 	@Transactional(readOnly = true)
 	public PaginatedStoriesResponse trending(int page, int pageSize) {
-		var pg = PageRequest.of(Math.max(0, page - 1), Math.max(1, pageSize));
+		var pg = PageRequest.of(ApiLimits.page(page) - 1, ApiLimits.pageSize(pageSize, ApiLimits.MAX_STORY_PAGE_SIZE));
 		Page<Story> result = storyRepository.findTrending(StoryStatus.PUBLISHED, pg);
 		User viewer = securityUtils.currentUserOrNull();
 		var items =
@@ -220,7 +220,7 @@ public class StoryService {
 	public PaginatedStoriesResponse myStories(
 			StoryStatus statusFilter, int page, int pageSize) {
 		User user = securityUtils.currentUser();
-		var pg = PageRequest.of(Math.max(0, page - 1), Math.max(1, pageSize));
+		var pg = PageRequest.of(ApiLimits.page(page) - 1, ApiLimits.pageSize(pageSize, ApiLimits.MAX_STORY_PAGE_SIZE));
 		Page<Story> result;
 		if (statusFilter != null) {
 			result = storyRepository.findByAuthorAndStatus(user, statusFilter, pg);
@@ -295,7 +295,7 @@ public class StoryService {
 	}
 
 	private CommentPreview commentPreview(Story story, int page, int pageSize) {
-		var pg = PageRequest.of(Math.max(0, page - 1), Math.max(1, pageSize));
+		var pg = PageRequest.of(ApiLimits.page(page) - 1, ApiLimits.pageSize(pageSize, ApiLimits.MAX_COMMENT_PAGE_SIZE));
 		var slice = commentRepository.findByStoryOrderByCreatedAtAsc(story, pg);
 		List<com.abhishek.stories_app.dto.CommentResponse> items =
 				slice.getContent().stream().map(StoryMapper::toComment).toList();

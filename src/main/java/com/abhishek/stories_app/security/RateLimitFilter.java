@@ -23,6 +23,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 	private static final ObjectMapper JSON = new ObjectMapper();
 
 	private final RateLimitService rateLimitService;
+	private final ClientIpResolver clientIpResolver;
 
 	@Override
 	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
@@ -40,7 +41,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 			throws ServletException, IOException {
 		String method = request.getMethod();
 		String path = request.getRequestURI();
-		String clientKey = ClientIpResolver.resolve(request);
+		String clientKey = clientIpResolver.resolve(request);
 
 		for (RateLimitProperties.Rule rule : rateLimitService.matchingRules(method, path)) {
 			if (!rateLimitService.tryConsume(rule, clientKey)) {

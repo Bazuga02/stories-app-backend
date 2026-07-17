@@ -24,8 +24,7 @@ public final class StoryMapper {
 		if (author == null) {
 			return null;
 		}
-		return new StoryAuthorResponse(
-				String.valueOf(author.getId()), author.getName(), author.getEmail());
+		return new StoryAuthorResponse(String.valueOf(author.getId()), author.getName());
 	}
 
 	public static CommentResponse toComment(Comment c) {
@@ -35,7 +34,7 @@ public final class StoryMapper {
 				c.getContent(),
 				String.valueOf(c.getStory().getId()),
 				String.valueOf(u.getId()),
-				new StoryAuthorResponse(String.valueOf(u.getId()), u.getName(), null),
+				new StoryAuthorResponse(String.valueOf(u.getId()), u.getName()),
 				formatInstant(c.getCreatedAt()));
 	}
 

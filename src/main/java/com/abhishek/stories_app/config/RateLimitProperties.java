@@ -5,11 +5,16 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "app.rate-limit")
-public record RateLimitProperties(boolean enabled, List<Rule> rules) {
+public record RateLimitProperties(
+		boolean enabled, int maxBuckets, Duration bucketTtl, List<Rule> rules) {
 
 	public RateLimitProperties {
 		if (rules == null) {
 			rules = List.of();
+		}
+		maxBuckets = Math.max(100, maxBuckets);
+		if (bucketTtl == null || bucketTtl.isNegative() || bucketTtl.isZero()) {
+			bucketTtl = Duration.ofMinutes(15);
 		}
 	}
 

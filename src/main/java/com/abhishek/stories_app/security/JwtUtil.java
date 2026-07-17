@@ -22,6 +22,9 @@ public class JwtUtil {
 
 	public JwtUtil(JwtProperties props) {
 		this.props = props;
+		if (props.secret() == null || props.secret().getBytes(StandardCharsets.UTF_8).length < 32) {
+			throw new IllegalStateException("JWT_SECRET must contain at least 32 UTF-8 bytes");
+		}
 		this.key = Keys.hmacShaKeyFor(props.secret().getBytes(StandardCharsets.UTF_8));
 	}
 
